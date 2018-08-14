@@ -1,0 +1,74 @@
+// Display the user defined video controls
+videoControls.setAttribute('data-state', 'visible');
+
+var supportsProgress = (document.createElement('progress').max !== undefined);
+if (!supportsProgress) progress.setAttribute('data-state', 'fake');
+
+var changeButtonState = function(type) {
+   // Play/Pause button
+   if (type == 'playpause') {
+      if (video.paused || video.ended) {
+         playpause.setAttribute('data-state', 'play');
+      }
+      else {
+         playpause.setAttribute('data-state', 'pause');
+      }
+   }
+   // Mute button
+   else if (type == 'mute') {
+      mute.setAttribute('data-state', video.muted ? 'unmute' : 'mute');
+   }
+}
+
+video.addEventListener('play', function() {
+   changeButtonState('playpause');
+}, false);
+video.addEventListener('pause', function() {
+   changeButtonState('playpause');
+}, false);
+stop.addEventListener('click', function(e) {
+   video.pause();
+   video.currentTime = 0;
+   progress.value = 0;
+   // Update the play/pause button's 'data-state' which allows the correct button image to be set via CSS
+   changeButtonState('playpause');
+});
+mute.addEventListener('click', function(e) {
+   video.muted = !video.muted;
+   changeButtonState('mute');
+});
+
+playpause.addEventListener('click', function(e) {
+   if (video.paused || video.ended) video.play();
+   else video.pause();
+});
+
+var checkVolume = function(dir) {
+   if (dir) {
+      var currentVolume = Math.floor(video.volume * 10) / 10;
+      if (dir === '+') {
+         if (currentVolume < 1) video.volume += 0.1;
+      }
+      else if (dir === '-') {
+         if (currentVolume > 0) video.volume -= 0.1;
+      }
+      // If the volume has been turned off, also set it as muted
+      // Note: can only do this with the custom control set as when the 'volumechange' event is raised, there is no way to know if it was via a volume or a mute change
+      if (currentVolume <= 0) video.muted = true;
+      else video.muted = false;
+   }
+   changeButtonState('mute');
+}
+var alterVolume = function(dir) {
+   checkVolume(dir);
+}
+
+video.addEventListener('volumechange', function() {
+   checkVolume();
+}, false);
+
+progress.addEventListener('click', function(e) {
+   var pos = (e.pageX  - (this.offsetLeft + this.offsetParent.offsetLeft)) / this.offsetWidth;
+   video.currentTime = pos * video.duration;
+});
+
